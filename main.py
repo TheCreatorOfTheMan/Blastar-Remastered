@@ -36,9 +36,9 @@ class GenericController():
         self.gameSpeedFactor = 1000
 
         self.deathFrames = round(self.targetFPS * 0.5, 0)
-        self.speed = 0.25
+        self.speed = 0.2
         self.maxSpeed = 5
-        self.falloff = 0.65
+        self.falloff = 0.1
 
         # ? Init
 
@@ -278,7 +278,6 @@ class NetworkController(GenericController):
     def packetHandler(self):
         while True:
             b, addr = self.client.recvfrom(256)
-            print(b)
             if b[1] == 0:
                 buff = b[2:]
                 if self.opponents.get(b[0]) == None:

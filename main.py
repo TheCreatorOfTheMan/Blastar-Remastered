@@ -278,22 +278,18 @@ class NetworkController(GenericController):
     def packetHandler(self):
         while True:
             b = self.client.recvfrom(256)
-            print("------------")
-            while len(b) != 0:
-                print(b)
-                if b[1] == 0:
-                    buff = b[2:2 + struct.calcsize("!IIIIf")]
-                    if self.opponents.get(b[0]) == None:
-                        self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
-                    self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
-                    self.game.summon(self.opponents[b[0]])
-                    b = b[2 + struct.calcsize("!IIIIf"):]
-                elif b[1] == 1:
-                    buff = b[2:2 + struct.calcsize("!ffff?")]
-                    self.opponents[b[0]].addForce(velocityFromBytes(buff))
-                    b = b[2 + struct.calcsize("!ffff?"):]
-                else:
-                    break
+            print(b)
+            if b[1] == 0:
+                buff = b[2:]
+                if self.opponents.get(b[0]) == None:
+                    self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
+                self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
+                self.game.summon(self.opponents[b[0]])
+            elif b[1] == 1:
+                buff = b[2:]
+                self.opponents[b[0]].addForce(velocityFromBytes(buff))
+            else:
+                break
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

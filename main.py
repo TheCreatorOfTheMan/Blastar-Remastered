@@ -279,11 +279,12 @@ class NetworkController(GenericController):
         while True:
             b, addr = self.client.recvfrom(256)
             if b[1] == 0:
+                print(b)
                 buff = b[2:]
                 if self.opponents.get(b[0]) == None:
                     self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
-                self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
-                self.game.summon(self.opponents[b[0]])
+                    self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
+                    self.game.summon(self.opponents[b[0]])
             elif b[1] == 1:
                 buff = b[2:]
                 self.opponents[b[0]].addForce(velocityFromBytes(buff))

@@ -54,6 +54,7 @@ while running:
         clients[addr] = index
         index += 1
 
-    for client in clients.keys():
-        if addr != client:
-            s.sendto(bytes([index]) + b, client)
+    if len(b) != 0:
+        for client in clients.keys():
+            if addr != client:
+                s.sendto(bytes([index]) + b, client)

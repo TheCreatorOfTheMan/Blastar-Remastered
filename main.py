@@ -279,8 +279,10 @@ class NetworkController(GenericController):
             b = self.client.recv(256)
             if b[1] == 0:
                 self.opponents[b[0]] = spaceObjectFromBytes(b[2:], self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
+                self.client.send(b"\x00" + self.player.toBytes())
                 self.game.summon(self.opponents[b[0]])
             elif b[1] == 1:
+                print(self.opponents)
                 self.opponents[b[0]].addForce(velocityFromBytes(b[2:]))
 
 if __name__ == "__main__":

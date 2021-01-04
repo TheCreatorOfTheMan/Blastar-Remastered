@@ -17,12 +17,12 @@ def player(conn, addr):
             break
         if not data:
             break
-        for client in clients:
-            if client != conn:
+        for client in clients.values():
+            if client[0] != conn:
                 try:
-                    client.send(bytes([clients.index(conn)]) + data)
+                    client[0].send(bytes([client[1]]) + data)
                 except:
-                    clients.remove(client)
+                    clients.pop(client[0].getsockname(), None)
 
 
 # * Note to self:
@@ -40,7 +40,8 @@ print("Specify port to host on")
 port = int(input(" > "))
 
 running = True
-clients = []
+clients = {}
+index = 0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((addr, port))
@@ -52,4 +53,5 @@ while running:
     t = threading.Thread(target=player, kwargs={
                          "conn": conn, "addr": addr}, daemon=True)
     t.start()
-    clients.append(conn)
+    clients[addr] = (conn, index)
+    index += 1

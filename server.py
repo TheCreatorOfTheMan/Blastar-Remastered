@@ -45,7 +45,10 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((addr, port))
 print(f"Listening to connections on port {port}")
 while running:
-    b, addr = s.recvfrom(256)
+    try:
+        b, addr = s.recvfrom(256)
+    except:
+        b = b''
 
     if clients.get(addr) == None:
         clients[addr] = index

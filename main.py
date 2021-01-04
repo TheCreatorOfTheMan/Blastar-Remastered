@@ -180,7 +180,7 @@ class NetworkController(GenericController):
         super().__init__()
 
     def run(self, addr, port):
-        self.addr = (addr, port)
+        self.remoteAddr = (addr, port)
 
         self.opponents = {}
 
@@ -189,7 +189,7 @@ class NetworkController(GenericController):
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
+        self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
 
         self.recvThread = threading.Thread(target=self.packetHandler, daemon=True)
         self.recvThread.start()
@@ -273,16 +273,16 @@ class NetworkController(GenericController):
             self.screen.fill(WHITE)
 
     def addForceNetworkCallback(self, vel):
-        self.client.sendto(b"\x01" + vel.toBytes(), self.addr)
+        self.client.sendto(b"\x01" + vel.toBytes(), self.remoteAddr)
 
     def packetHandler(self):
         while True:
-            b = self.client.recvfrom(256)
+            b, addr = self.client.recvfrom(256)
             print(b)
             if b[1] == 0:
                 buff = b[2:]
                 if self.opponents.get(b[0]) == None:
-                    self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
+                    self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
                 self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                 self.game.summon(self.opponents[b[0]])
             elif b[1] == 1:

@@ -288,7 +288,7 @@ class NetworkController(GenericController):
             elif b[1] == 1:
                 # buff = b[2:2 + struct.calcsize("!ffff?")]
                 buff = b[2:]
-                self.opponents[b[0]].addForce(velocityFromBytes(buff[2:]))
+                self.opponents[b[0]].addForce(velocityFromBytes(buff))
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

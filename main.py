@@ -278,18 +278,22 @@ class NetworkController(GenericController):
     def packetHandler(self):
         while True:
             b = self.client.recv(256)
+            print("------------")
             while len(b) != 0:
+                print(b)
                 if b[1] == 0:
                     buff = b[2:2 + struct.calcsize("!IIIIf")]
                     if self.opponents.get(b[0]) == None:
                         self.client.send(b"\x00" + self.player.toBytes())
                     self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                     self.game.summon(self.opponents[b[0]])
-                    b = b[2 + struct.calcsize("!IIIIf") + 1:]
+                    b = b[2 + struct.calcsize("!IIIIf"):]
                 elif b[1] == 1:
                     buff = b[2:2 + struct.calcsize("!ffff?")]
                     self.opponents[b[0]].addForce(velocityFromBytes(buff))
-                    b = b[2 + struct.calcsize("!ffff?") + 1:]
+                    b = b[2 + struct.calcsize("!ffff?"):]
+                else:
+                    break
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

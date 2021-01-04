@@ -182,6 +182,9 @@ class NetworkController(GenericController):
     def run(self):
         self.opponents = {}
 
+        self.opponentSprite = pygame.image.load("enemy.png")
+        self.opponentDead = pygame.image.load("enemy_death.png")
+
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((addr, port))
 
@@ -275,7 +278,7 @@ class NetworkController(GenericController):
         while True:
             b = self.client.recv(256)
             if b[1] == 0:
-                self.opponents[b[0]] = spaceObjectFromBytes(b[2:])
+                self.opponents[b[0]] = spaceObjectFromBytes(b[2:], self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                 self.game.summon(self.opponents[b[0]])
             elif b[1] == 1:
                 self.opponents[b[0]].addForce(velocityFromBytes(b[2:]))

@@ -53,7 +53,7 @@ class GenericController():
             sprite=pygame.image.load("player.png"),
             dead=pygame.image.load("player_death.png"),
             velocityQueue=[],
-            maxVelStack=2,
+            maxVelStack=1,
             maxVelSpeed=self.maxSpeed,
             onWallCollided=self.limitPlayers,
             onCollision=self.onAllCollided,
@@ -166,7 +166,7 @@ class SingleplayerController(GenericController):
             sprite=pygame.image.load("enemy.png"),
             dead=pygame.image.load("enemy_death.png"),
             velocityQueue=[],
-            maxVelStack=2,
+            maxVelStack=1,
             maxVelSpeed=self.maxSpeed,
             onWallCollided=self.limitPlayers,
             onCollision=self.onAllCollided,
@@ -179,19 +179,20 @@ class NetworkController(GenericController):
     def __init__(self):
         super().__init__()
 
-    def run(self):
+    def run(self, addr, port):
+        self.addr = (addr, port)
+
         self.opponents = {}
 
         self.opponentSprite = pygame.image.load("enemy.png")
         self.opponentDead = pygame.image.load("enemy_death.png")
 
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((addr, port))
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
 
         self.recvThread = threading.Thread(target=self.packetHandler, daemon=True)
         self.recvThread.start()
-
-        self.client.send(b"\x00" + self.player.toBytes())
 
         WHITE = (255, 255, 255)
         BLACK = (0, 0, 0)
@@ -272,19 +273,18 @@ class NetworkController(GenericController):
             self.screen.fill(WHITE)
 
     def addForceNetworkCallback(self, vel):
-        print(vel.toBytes())
-        self.client.send(b"\x01" + vel.toBytes())
+        self.client.sendto(b"\x01" + vel.toBytes(), self.addr)
 
     def packetHandler(self):
         while True:
-            b = self.client.recv(256)
+            b = self.client.recvfrom(256)
             print("------------")
             while len(b) != 0:
                 print(b)
                 if b[1] == 0:
                     buff = b[2:2 + struct.calcsize("!IIIIf")]
                     if self.opponents.get(b[0]) == None:
-                        self.client.send(b"\x00" + self.player.toBytes())
+                        self.client.sendto(b"\x00" + self.player.toBytes(), self.addr)
                     self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                     self.game.summon(self.opponents[b[0]])
                     b = b[2 + struct.calcsize("!IIIIf"):]
@@ -309,4 +309,4 @@ if __name__ == "__main__":
         port = int(input(" > "))
 
         game = NetworkController()
-        game.run()
+        game.run(addr, port)

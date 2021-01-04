@@ -42,15 +42,16 @@ running = True
 clients = {}
 index = 0
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((addr, port))
 while running:
     print(f"Listening to connections on port {port}")
-    s.listen(0)
-    conn, addr = s.accept()
+    b, addr = s.recvfrom(256)
 
-    t = threading.Thread(target=player, kwargs={
-                         "conn": conn, "addr": addr}, daemon=True)
-    t.start()
-    clients[addr] = (conn, index)
-    index += 1
+    if clients.get(addr) == None:
+        clients[addr] = index
+        index += 1
+
+    for client in clients.keys():
+        if addr != client:
+            s.sendto(bytes([index]) + b, client)

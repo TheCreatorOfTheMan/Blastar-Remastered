@@ -1,5 +1,4 @@
 import socket
-import threading
 
 
 def player(conn, addr):
@@ -44,8 +43,8 @@ index = 0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((addr, port))
+print(f"Listening to connections on port {port}")
 while running:
-    print(f"Listening to connections on port {port}")
     b, addr = s.recvfrom(256)
 
     if clients.get(addr) == None:

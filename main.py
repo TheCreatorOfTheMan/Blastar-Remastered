@@ -180,8 +180,13 @@ class NetworkController(GenericController):
         super().__init__()
 
     def run(self):
+        self.opponents = {}
+
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((addr, port))
+
+        self.recvThread = threading.Thread(target=self.packetHandler, daemon=True)
+        self.recvThread.start()
 
         self.client.send(b"\x00" + self.player.toBytes())
 
@@ -269,7 +274,11 @@ class NetworkController(GenericController):
     def packetHandler(self):
         while True:
             b = self.client.recv(256)
-            print(b)
+            if b[1] == 0:
+                self.opponents[b[0]] = spaceObjectFromBytes(b[2:])
+                self.game.summon(self.opponents[b[0]])
+            elif b[1] == 1:
+                self.opponents[b[0]].addForce(velocityFromBytes(b[2:]))
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

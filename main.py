@@ -301,9 +301,9 @@ class NetworkController(GenericController):
     def packetHandler(self):
         while True:
             b, addr = self.client.recvfrom(256)
-            buff = b[2:]
             if b[1] == 0:  # ? Handle Player Join
                 print(b)
+                buff = b[2:]
                 if self.opponents.get(b[0]) == None:
                     self.client.sendto(
                         b"\x00" + self.player.toBytes(), self.remoteAddr)
@@ -311,8 +311,10 @@ class NetworkController(GenericController):
                         buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                     self.game.summon(self.opponents[b[0]])
             elif b[1] == 1:  # ? Handle Velocity
+                buff = b[2:]
                 self.opponents[b[0]].addForce(velocityFromBytes(buff))
             elif b[1] == 2:  # ? Handle Sync
+                buff = b[2:]
                 syncParams = interpretSyncBytes(buff)
                 distX = self.opponents[b[0]].pos[0] - syncParams[0][0]
                 distY = self.opponents[b[0]].pos[1] - syncParams[0][1]

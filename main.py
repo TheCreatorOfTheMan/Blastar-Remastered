@@ -189,7 +189,7 @@ class NetworkController(GenericController):
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
+        self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr) #? Packet Type 0: Player Join
 
         self.recvThread = threading.Thread(target=self.packetHandler, daemon=True)
         self.recvThread.start()
@@ -272,7 +272,7 @@ class NetworkController(GenericController):
             pygame.display.update()
             self.screen.fill(WHITE)
 
-    def addForceNetworkCallback(self, vel):
+    def addForceNetworkCallback(self, vel): #? Packet type 1: Velocity
         self.client.sendto(b"\x01" + vel.toBytes(), self.remoteAddr)
 
     def packetHandler(self):
@@ -290,6 +290,9 @@ class NetworkController(GenericController):
                 self.opponents[b[0]].addForce(velocityFromBytes(buff))
             else:
                 break
+
+    def quit(self): #? Packet type 4: Player Quit
+        self.client.sendto(b"\x04")
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

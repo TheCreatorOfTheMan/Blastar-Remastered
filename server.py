@@ -37,24 +37,32 @@ addr = input(" > ")
 print("Specify port to host on")
 port = int(input(" > "))
 
-running = True
 clients = {}
 index = 0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(0.5)
 s.bind((addr, port))
+
 print(f"Listening to connections on port {port}")
-while running:
+while True:
     try:
-        b, addr = s.recvfrom(256)
-    except:
-        b = b''
+        try:
+            b, addr = s.recvfrom(256)
+        except:
+            continue
+    except KeyboardInterrupt:
+        print("Stopping!")
+        break
 
     if clients.get(addr) == None:
         clients[addr] = index
         index += 1
+        print(clients)
 
-    if len(b) != 0:
-        for client in clients.keys():
-            if addr != client:
-                s.sendto(bytes([index]) + b, client)
+    if b[0] == 4:
+        clients.pop(addr, None)
+
+    for client in clients.keys():
+        if addr != client:
+            s.sendto(bytes([clients[addr]]) + b, client)

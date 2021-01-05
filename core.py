@@ -70,14 +70,14 @@ class Velocity:
         # * Negative velocity: [ -inf ----0---- inf ]
         # *             Clamp  :   ^      ^
 
-        if self.x < 0:  # ? Apply falloff to x
+        if self.x < 0:  # ? Apply the falloff to x
             self.x += self._falloff
             self.x = clamp(self.x, -self.maxSpeed, 0)
         elif self.x > 0:
             self.x -= self._falloff
             self.x = clamp(self.x, 0, self.maxSpeed)
 
-        if self.y < 0:  # ? Apply falloff to y
+        if self.y < 0:  # ? Apply the falloff to y
             self.y += self._falloff
             self.y = clamp(self.y, -self.maxSpeed, 0)
         elif self.y > 0:

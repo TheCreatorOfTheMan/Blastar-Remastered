@@ -152,8 +152,9 @@ class SpaceObject:
             self.velocity.fromTuple(
                 self.velocityQueue[0].apply(self.velocity.asTuple()))
             if self.velocityQueue[0].finished == True:
-                self.onVelocityFinish(self.velocityQueue[0], self)
+                vel = self.velocityQueue[0]
                 self.velocityQueue.pop(0)
+                self.onVelocityFinish(vel, self)
 
         self.pos = list(self.velocity.apply(self.pos))
 
@@ -240,7 +241,7 @@ def constructSyncBytes(pos: Union[Tuple[int, int], List[int]], vel: Velocity):
     # ? Velocity Sync Protocol Description:
     # ? Buffer Size: 25 Bytes
     # ? [4 Bytes (int) X] | [4 Bytes (int) Y] | [17 Bytes (Velocity) Latest Velocity as Bytes]
-    return struct.pack("!II", pos[0], pos[1]) + vel.toBytes()
+    return struct.pack("!II", int(pos[0]), int(pos[1])) + vel.toBytes()
 
 
 def interpretSyncBytes(b: bytes) -> Tuple[Tuple[int, int], Velocity]:

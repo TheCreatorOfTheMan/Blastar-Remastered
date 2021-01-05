@@ -345,10 +345,11 @@ if __name__ == "__main__":
         game = SingleplayerController()
         game.run()
     elif mode == 1:
-        print("Specify Multiplayer Server Address")
-        addr = input(" > ")
-        print("Specify Multiplayer Server Port")
-        port = int(input(" > "))
+        # ? DEBUG
+        # print("Specify Multiplayer Server Address")
+        # addr = input(" > ")
+        # print("Specify Multiplayer Server Port")
+        # port = int(input(" > "))
 
         game = NetworkController()
-        game.run(addr, port)
+        game.run("192.168.1.10", "3000")

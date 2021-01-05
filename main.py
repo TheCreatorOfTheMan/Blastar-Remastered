@@ -189,6 +189,8 @@ class NetworkController(GenericController):
         super().__init__()
 
     def run(self, addr: str, port: int):
+        self.player.onVelocityFinish = self.onVelocityFinishCallback
+
         self.remoteAddr = (addr, port)
 
         self.opponents = {}

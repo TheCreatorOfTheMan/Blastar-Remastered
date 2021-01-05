@@ -245,4 +245,4 @@ def constructSyncBytes(pos: Union[Tuple[int, int], List[int]], vel: Velocity):
 
 
 def interpretSyncBytes(b: bytes) -> Tuple[Tuple[int, int], Velocity]:
-    return (struct.unpack("!II", b[:9]), velocityFromBytes(b[9:]))
+    return (struct.unpack("!II", b[:8]), velocityFromBytes(b[8:]))

@@ -318,14 +318,14 @@ class NetworkController(GenericController):
             elif b[1] == 2:  # ? Handle Sync
                 buff = b[2:]
                 syncParams = interpretSyncBytes(buff)
-                print(syncParams)
-                distX = self.opponents[b[0]].pos[0] - syncParams[0][0]
-                distY = self.opponents[b[0]].pos[1] - syncParams[0][1]
+                distX = int(self.opponents[b[0]].pos[0]) - syncParams[0][0]
+                distY = int(self.opponents[b[0]].pos[1]) - syncParams[0][1]
+                print(distX, syncParams[1])
                 if distY == 0:
-                    for i in range(distX // syncParams[1].x):
+                    for i in range(int(distX // syncParams[1].x)):
                         self.opponents[b[0]].velocityQueue.append(syncParams[1])
                 elif distX == 0:
-                    for i in range(distY // syncParams[1].y):
+                    for i in range(int(distY // syncParams[1].y)):
                         self.opponents[b[0]].velocityQueue.append(syncParams[1])
                 else:
                     print("Encountered a diagonal!")

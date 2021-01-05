@@ -1,6 +1,6 @@
 # ------------------------------------------------------- #
 # Blastar Remastered                                      #
-#   by: Sid and Krish                                     #
+#   by: Sid and Krish M.                                    #
 #                                                         #
 # "If I had gone to the point of adding velocity maybe    #
 #   I should've included a whole physics engine as well"  #

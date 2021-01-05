@@ -214,7 +214,7 @@ class NetworkController(GenericController):
 
             if keystate[pygame.K_LEFT]:
                 self.player.addForce(
-                    Velocity(-self.speed * (self.gameSpeedFactor / fps), 0,
+                    Velocity(-self.speed * (self.gameSpeedFactor * (1 / fps)), 0,
                              self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed), self.addForceNetworkCallback
                 )
             if keystate[pygame.K_RIGHT]:

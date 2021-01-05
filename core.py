@@ -137,8 +137,9 @@ class SpaceObject:
         # * really all I care about
         self.tick = types.MethodType(self.deathTick, self)
 
-    def addForce(self, vel: Velocity, callback = lambda vel : None):
+    def addForce(self, vel: Velocity, callback=lambda vel: None):
         if len(self.velocityQueue) != self.maxVelocityStack:
+            print(vel)
             self.velocityQueue.append(vel)
             callback(vel)
 
@@ -213,12 +214,12 @@ def clamp(n, least, most):
     return max(least, min(n, most))
 
 
-def velocityFromBytes(b):
+def velocityFromBytes(b: bytes):
     velocityParams = struct.unpack("!ffff?", b)
     return Velocity(velocityParams[0], velocityParams[1], velocityParams[3], velocityParams[4],  velocityParams[2])
 
 
-def spaceObjectFromBytes(b, scr, sprite, dead, onWallCollided, onCollision, givenID):
+def spaceObjectFromBytes(b: bytes, scr: pygame.display, sprite: pygame.Surface, dead: pygame.Surface, onWallCollided, onCollision, givenID: str):
     spaceObjectParams = struct.unpack("!IIIIf", b)
     return SpaceObject(
         [
@@ -232,3 +233,7 @@ def spaceObjectFromBytes(b, scr, sprite, dead, onWallCollided, onCollision, give
         onCollision,
         givenID, spaceObjectParams[4]
     )
+
+
+def positionToBytes(pos: Tuple[int, int]):
+    return struct.pack("!II", pos[0], pos[1])

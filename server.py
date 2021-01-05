@@ -60,7 +60,7 @@ while True:
         index += 1
         print(clients)
 
-    if b[0] == 4:
+    if b[0] == 5:
         clients.pop(addr, None)
 
     for client in clients.keys():

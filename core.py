@@ -99,17 +99,18 @@ class Velocity:
     def toBytes(self) -> bytes:
         # ? Velocity as Bytes Protocol Description:
         # ? Buffer size: 17 Bytes
-        # ? [4 Bytes (float) X] | [4 Bytes (float) Y] | [4 Bytes (float) maxSpeed] | [4 Bytes (float) falloff] | [1 Byte (Bool) persistency]
+        # ? [4 Bytes (float) X] | [4 Bytes (float) Y] | [4 Bytes (float) maxSpeed] | [4 Bytes (float) falloff] | [1 Byte (Bool) persistency] |
         return struct.pack("!ffff?", self.x, self.y, self.maxSpeed, self._falloff, self.persistent)
 
 
 class SpaceObject:
-    def __init__(self, pos: List[int], scr: pygame.display, sprite: pygame.Surface, dead: pygame.Surface, velocityQueue: List[Velocity], maxVelStack: int, maxVelSpeed: int, onWallCollided, onCollision, givenID: str, velocityFalloff: float):
+    def __init__(self, pos: List[int], scr: pygame.display, sprite: pygame.Surface, dead: pygame.Surface, velocityQueue: List[Velocity], maxVelStack: int, maxVelSpeed: int, onWallCollided, onCollision, givenID: str, velocityFalloff: float, onVelocityFinish=lambda vel, obj: None):
         self.id = givenID
         self.isDead = False
 
         self.onWallCollided = onWallCollided
         self.onCollision = onCollision
+        self.onVelocityFinish = onVelocityFinish
 
         self.pos = pos
         self.velocityFalloff = velocityFalloff
@@ -132,9 +133,9 @@ class SpaceObject:
         self.active = self.dead
         self.isDead = True
 
-        # * I'll admit, this is a bit of a "hacky" solution but
-        # * it achieves what I want cleanly in one line and that's
-        # * really all I care about
+        # * I'll admit, this is a bit of a "hacky" solution and is
+        # * usually only okay in Javascript but it achieves what
+        # * I want cleanly in one line and that's really all I care about
         self.tick = types.MethodType(self.deathTick, self)
 
     def addForce(self, vel: Velocity, callback=lambda vel: None):
@@ -152,6 +153,7 @@ class SpaceObject:
             self.velocity.fromTuple(
                 self.velocityQueue[0].apply(self.velocity.asTuple()))
             if self.velocityQueue[0].finished == True:
+                self.onVelocityFinish(self.velocityQueue[0], self)
                 self.velocityQueue.pop(0)
 
         self.pos = list(self.velocity.apply(self.pos))
@@ -214,12 +216,12 @@ def clamp(n, least, most):
     return max(least, min(n, most))
 
 
-def velocityFromBytes(b: bytes):
+def velocityFromBytes(b: bytes) -> Velocity:
     velocityParams = struct.unpack("!ffff?", b)
     return Velocity(velocityParams[0], velocityParams[1], velocityParams[3], velocityParams[4],  velocityParams[2])
 
 
-def spaceObjectFromBytes(b: bytes, scr: pygame.display, sprite: pygame.Surface, dead: pygame.Surface, onWallCollided, onCollision, givenID: str):
+def spaceObjectFromBytes(b: bytes, scr: pygame.display, sprite: pygame.Surface, dead: pygame.Surface, onWallCollided, onCollision, givenID: str) -> SpaceObject:
     spaceObjectParams = struct.unpack("!IIIIf", b)
     return SpaceObject(
         [
@@ -235,5 +237,12 @@ def spaceObjectFromBytes(b: bytes, scr: pygame.display, sprite: pygame.Surface, 
     )
 
 
-def positionToBytes(pos: Tuple[int, int]):
-    return struct.pack("!II", pos[0], pos[1])
+def constructSyncBytes(pos: Union[Tuple[int, int], List[int]], vel: Velocity):
+    # ? Velocity Sync Protocol Description:
+    # ? Buffer Size: 25 Bytes
+    # ? [4 Bytes (int) X] | [4 Bytes (int) Y] | [17 Bytes (Velocity) Latest Velocity as Bytes]
+    return struct.pack("!II", pos[0], pos[1]) + vel.toBytes()
+
+
+def interpretSyncBytes(b: bytes) -> Tuple[Tuple[int, int], Velocity]:
+    return (struct.unpack("!II", b[:9]), velocityFromBytes(b[9:]))

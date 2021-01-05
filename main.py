@@ -1,6 +1,6 @@
 # ------------------------------------------------------- #
 # Blastar Remastered                                      #
-#   by: Sid and Krish M.                                    #
+#   by: Sid and Krish                                     #
 #                                                         #
 # "If I had gone to the point of adding velocity maybe    #
 #   I should've included a whole physics engine as well"  #
@@ -86,22 +86,22 @@ class GenericController():
             if keystate[pygame.K_LEFT]:
                 self.player.addForce(
                     Velocity(-self.speed * (self.gameSpeedFactor / fps), 0,
-                            self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
                 )
             if keystate[pygame.K_RIGHT]:
                 self.player.addForce(
                     Velocity(self.speed * (self.gameSpeedFactor / fps), 0,
-                            self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
                 )
             if keystate[pygame.K_UP]:
                 self.player.addForce(
                     Velocity(0, -self.speed * (self.gameSpeedFactor / fps),
-                            self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
                 )
             if keystate[pygame.K_DOWN]:
                 self.player.addForce(
                     Velocity(0, self.speed * (self.gameSpeedFactor / fps),
-                            self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed)
                 )
             if keystate[pygame.K_SPACE]:  # ? Shoot
                 # * This is not a great solution especially for lower frame rates however it will do for now
@@ -175,11 +175,20 @@ class SingleplayerController(GenericController):
         ))
 
 
+# ? Network Protcol Packet Types:
+# ? -----------------------------------
+# ? 0: Player Join
+# ? 1: Player Velocity
+# ? 2: Velocity Sync
+# ? 3: SpaceObject Summon
+# ? 4: SpaceObject Kill
+# ? 5: Player Quit
+
 class NetworkController(GenericController):
     def __init__(self):
         super().__init__()
 
-    def run(self, addr, port):
+    def run(self, addr: str, port: int):
         self.remoteAddr = (addr, port)
 
         self.opponents = {}
@@ -189,9 +198,11 @@ class NetworkController(GenericController):
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr) #? Packet Type 0: Player Join
+        # ? Packet Type 0: Player Join
+        self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
 
-        self.recvThread = threading.Thread(target=self.packetHandler, daemon=True)
+        self.recvThread = threading.Thread(
+            target=self.packetHandler, daemon=True)
         self.recvThread.start()
 
         WHITE = (255, 255, 255)
@@ -214,23 +225,27 @@ class NetworkController(GenericController):
 
             if keystate[pygame.K_LEFT]:
                 self.player.addForce(
-                    Velocity(-self.speed * (self.gameSpeedFactor * (1 / fps)), 0,
-                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed), self.addForceNetworkCallback
+                    Velocity(-self.speed * (self.gameSpeedFactor / fps), 0,
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed),
+                    self.addForceNetworkCallback
                 )
             if keystate[pygame.K_RIGHT]:
                 self.player.addForce(
                     Velocity(self.speed * (self.gameSpeedFactor / fps), 0,
-                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed), self.addForceNetworkCallback
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed),
+                    self.addForceNetworkCallback
                 )
             if keystate[pygame.K_UP]:
                 self.player.addForce(
                     Velocity(0, -self.speed * (self.gameSpeedFactor / fps),
-                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed), self.addForceNetworkCallback
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed),
+                    self.addForceNetworkCallback
                 )
             if keystate[pygame.K_DOWN]:
                 self.player.addForce(
                     Velocity(0, self.speed * (self.gameSpeedFactor / fps),
-                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed), self.addForceNetworkCallback
+                             self.falloff * (self.gameSpeedFactor / fps), False, self.maxSpeed),
+                    self.addForceNetworkCallback
                 )
             if keystate[pygame.K_SPACE]:  # ? Shoot
                 # * This is not a great solution especially for lower frame rates however it will do for now
@@ -272,27 +287,50 @@ class NetworkController(GenericController):
             pygame.display.update()
             self.screen.fill(WHITE)
 
-    def addForceNetworkCallback(self, vel): #? Packet type 1: Velocity
+    # ? Packet type 1: Velocity
+    def addForceNetworkCallback(self, vel: Velocity):
         self.client.sendto(b"\x01" + vel.toBytes(), self.remoteAddr)
+
+    # ? Packet type 2: Sync
+    def onVelocityFinishCallback(self, vel: Velocity, obj: SpaceObject):
+        if len(obj.velocityQueue) == 0:
+            self.client.sendto(
+                b"\x02" + constructSyncBytes(obj.pos, vel), self.remoteAddr
+            )
 
     def packetHandler(self):
         while True:
             b, addr = self.client.recvfrom(256)
-            if b[1] == 0:
+            buff = b[2:]
+            if b[1] == 0:  # ? Handle Player Join
                 print(b)
-                buff = b[2:]
                 if self.opponents.get(b[0]) == None:
-                    self.client.sendto(b"\x00" + self.player.toBytes(), self.remoteAddr)
-                    self.opponents[b[0]] = spaceObjectFromBytes(buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
+                    self.client.sendto(
+                        b"\x00" + self.player.toBytes(), self.remoteAddr)
+                    self.opponents[b[0]] = spaceObjectFromBytes(
+                        buff, self.screen, self.opponentSprite, self.opponentDead, self.limitPlayers, self.onAllCollided, f"Player_{b[0]}")
                     self.game.summon(self.opponents[b[0]])
-            elif b[1] == 1:
-                buff = b[2:]
+            elif b[1] == 1:  # ? Handle Velocity
                 self.opponents[b[0]].addForce(velocityFromBytes(buff))
+            elif b[1] == 2:  # ? Handle Sync
+                syncParams = interpretSyncBytes(buff)
+                distX = self.opponents[b[0]].pos[0] - syncParams[0][0]
+                distY = self.opponents[b[0]].pos[1] - syncParams[0][1]
+                if distY == 0:
+                    for i in range(distX // syncParams[1].x):
+                        self.opponents[b[0]].velocityQueue.append(syncParams[1])
+                elif distX == 0:
+                    for i in range(distY // syncParams[1].y):
+                        self.opponents[b[0]].velocityQueue.append(syncParams[1])
+                else:
+                    print("Encountered a diagonal!")
             else:
                 break
 
-    def quit(self): #? Packet type 4: Player Quit
-        self.client.sendto(b"\x04")
+    # ? Packet type 4: Player Quit
+    def quit(self):
+        self.client.sendto(b"\x05")
+
 
 if __name__ == "__main__":
     menu = open("menu.txt", "r")

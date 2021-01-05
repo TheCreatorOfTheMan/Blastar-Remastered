@@ -352,4 +352,4 @@ if __name__ == "__main__":
         # port = int(input(" > "))
 
         game = NetworkController()
-        game.run("192.168.1.10", "3000")
+        game.run("192.168.1.10", 3000)

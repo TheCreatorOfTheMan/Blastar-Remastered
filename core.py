@@ -140,7 +140,6 @@ class SpaceObject:
 
     def addForce(self, vel: Velocity, callback=lambda vel: None):
         if len(self.velocityQueue) != self.maxVelocityStack:
-            print(vel)
             self.velocityQueue.append(vel)
             callback(vel)
 

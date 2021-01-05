@@ -316,6 +316,7 @@ class NetworkController(GenericController):
             elif b[1] == 2:  # ? Handle Sync
                 buff = b[2:]
                 syncParams = interpretSyncBytes(buff)
+                print(syncParams)
                 distX = self.opponents[b[0]].pos[0] - syncParams[0][0]
                 distY = self.opponents[b[0]].pos[1] - syncParams[0][1]
                 if distY == 0:

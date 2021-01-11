@@ -10,6 +10,9 @@ import pygame
 # * is used instead
 
 
+delta = 0.1  # ? Velocity precision, lower value more precise
+
+
 class CollisionBox:
     def __init__(self, top_left: List[int], dimensions: List[int]):
         self.top_left = top_left
@@ -54,35 +57,58 @@ class Velocity:
         return (pos[0], pos[1])
 
     def applyLogic(self, pos: Tuple[int, int]) -> Tuple[int, int]:
-        result = (pos[0] + self.x, pos[1] + self.y)
+        # * Let me tell a story about these changes and the sync packet implementation, this required a week of confusion, an hour long talk with my mother, a page out of an calculus textbook
 
-        # * Note to self: Don't try to shrink this code since that ain't gonna happen
-        # * The reason why there must be similar code in different clauses is because if
-        # * the velocity was initialized positive, then MIN value of clamping is different
-        # * (in this case it should be 0) than if velocity was initialized negative in which
-        # * the MAX value should be 0
+        # * So I was having trouble implementing sync packets since I needed to way to "generate" velocity that would only move a certain distance.
+        # * There is a prediction formula for this however (d = vt - 1/2at^2, this is for de-acceleration), and changing the formula
+        # * around to solve for something like speed would yield me a speed that would fit a given distance, acceleration and time. The problem with this
+        # * is that when I tried it out with the velocity system originally (which is where I would add the individual speeds together like s + (s - a) + (s - 2a) + ... (until s - na = 0))
+        # * it had strangely overshot.
 
-        # * Here's a nice ASCII visual
+        # * Here's a nice visualization:
+        # * https://docs.google.com/spreadsheets/d/1D1ytvEYiZuS8MbCK8ZMJZyb7pdmmDYf__X-L14H9BE0/edit?usp=sharing
 
-        # * Positive velocity: [ -inf ----0---- inf ]
-        # *                    Clamp  :   ^      ^
+        # * After spending an hour talking to my mother about this she finally pinpointed the issue, which is the same issue stated in the graph.
+        # * It's because the prediction formula is modeled after the real world, in the real world the unit of "time" is infinitely small, there is no "smallest"
+        # * interval of time, seconds can be divided into milliseconds, milliseconds can be divided into microseconds etc...
+        # * When I had been adding together the individual speeds, and accelerations I had assumed time would move in intervals of 1
+        # * So the original equation actually looked something like this (Δt = 1)
+        # * s + (s - a * Δt) + (s - 2a * Δt) + ... (until s - na = 0)
+        # * So obviously the lower Δt is, the more additions ^ this will have but it makes the distances of velocities more accurate
 
-        # * Negative velocity: [ -inf ----0---- inf ]
-        # *             Clamp  :   ^      ^
+        result = [pos[0], pos[1]]
 
-        if self.x < 0:  # ? Apply the falloff to x
-            self.x += self._falloff
-            self.x = clamp(self.x, -self.maxSpeed, 0)
-        elif self.x > 0:
-            self.x -= self._falloff
-            self.x = clamp(self.x, 0, self.maxSpeed)
+        for i in range(int(1/delta)):
+            result[0] += self.x * delta
+            result[1] += self.y * delta
 
-        if self.y < 0:  # ? Apply the falloff to y
-            self.y += self._falloff
-            self.y = clamp(self.y, -self.maxSpeed, 0)
-        elif self.y > 0:
-            self.y -= self._falloff
-            self.y = clamp(self.y, 0, self.maxSpeed)
+            # * Note to self: Don't try to shrink this code since that ain't gonna happen
+            # * The reason why there must be similar code in different clauses is because if
+            # * the velocity was initialized positive, then MIN value of clamping is different
+            # * (in this case it should be 0) than if velocity was initialized negative in which
+            # * the MAX value should be 0
+
+            # * Here's a nice ASCII visual
+
+            # * Positive velocity: [ -inf ----0---- inf ]
+            # *                    Clamp  :   ^      ^
+
+            # * Negative velocity: [ -inf ----0---- inf ]
+            # *             Clamp  :   ^      ^
+
+            if self.x < 0:  # ? Apply the falloff to x
+                self.x += self._falloff * delta
+                self.x = clamp(self.x, -self.maxSpeed, 0)
+            elif self.x > 0:
+                self.x -= self._falloff * delta
+                self.x = clamp(self.x, 0, self.maxSpeed)
+
+            if self.y < 0:  # ? Apply the falloff to y
+                self.y += self._falloff * delta
+                self.y = clamp(self.y, -self.maxSpeed, 0)
+            elif self.y > 0:
+                self.y -= self._falloff * delta
+                self.y = clamp(self.y, 0, self.maxSpeed)
 
         return result
 
@@ -240,9 +266,9 @@ def spaceObjectFromBytes(b: bytes, scr: pygame.display, sprite: pygame.Surface, 
 def constructSyncBytes(pos: Union[Tuple[int, int], List[int]], vel: Velocity):
     # ? Velocity Sync Protocol Description:
     # ? Buffer Size: 25 Bytes
-    # ? [4 Bytes (int) X] | [4 Bytes (int) Y] | [17 Bytes (Velocity) Latest Velocity as Bytes]
-    return struct.pack("!II", int(pos[0]), int(pos[1])) + vel.toBytes()
+    # ? [4 Bytes (int) X] | [4 Bytes (int) Y]
+    return struct.pack("!II", int(pos[0]), int(pos[1]))
 
 
 def interpretSyncBytes(b: bytes) -> Tuple[Tuple[int, int], Velocity]:
-    return (struct.unpack("!II", b[:8]), velocityFromBytes(b[8:]))
+    return struct.unpack("!II", b)

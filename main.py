@@ -11,6 +11,8 @@
 #             -I, who didn't really regret that one, 2021 #
 #                                                         #
 # "Probably should've written tests."                     #
+#                                                         #
+# Credits to my mother for math support                   #
 # ------------------------------------------------------- #
 
 # Note: This game is best played natively
@@ -305,7 +307,7 @@ class NetworkController(GenericController):
             b, addr = self.client.recvfrom(256)
             if b[1] == 0:  # ? Handle Player Join
                 print(b)
-                buff = b[2:]
+                buff = b[2:] #* For some reason, even though the buffer used by all the types of packets are the same, defining that buffer outside the if statement breaks the interpretation
                 if self.opponents.get(b[0]) == None:
                     self.client.sendto(
                         b"\x00" + self.player.toBytes(), self.remoteAddr)
@@ -320,15 +322,15 @@ class NetworkController(GenericController):
                 syncParams = interpretSyncBytes(buff)
                 distX = int(self.opponents[b[0]].pos[0]) - syncParams[0][0]
                 distY = int(self.opponents[b[0]].pos[1]) - syncParams[0][1]
-                print(distX, syncParams[1])
-                if distY == 0:
-                    for i in range(int(distX // syncParams[1].x)):
-                        self.opponents[b[0]].velocityQueue.append(syncParams[1])
-                elif distX == 0:
-                    for i in range(int(distY // syncParams[1].y)):
-                        self.opponents[b[0]].velocityQueue.append(syncParams[1])
-                else:
-                    print("Encountered a diagonal!")
+                print(distX, distY)
+                # if distY == 0:
+                #     for i in range(int(distX // syncParams[1].x)):
+                #         self.opponents[b[0]].velocityQueue.append(syncParams[1])
+                # elif distX == 0:
+                #     for i in range(int(distY // syncParams[1].y)):
+                #         self.opponents[b[0]].velocityQueue.append(syncParams[1])
+                # else:
+                #     print("Encountered a diagonal!")
             else:
                 break
 
